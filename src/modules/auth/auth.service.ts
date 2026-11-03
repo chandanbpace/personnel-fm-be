@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { AppError } from '../../common/errors';
 import { logger } from '../../common/logger';
 import { env } from '../../config/env';
+import { ensureDefaultCategories } from '../categories/categories.service';
 import { toPublicUser, UserModel, type PublicUser } from '../users/user.model';
 import type { LoginInput, RegisterInput } from './auth.schemas';
 import { passwordResetNotifier } from './passwordResetNotifier';
@@ -38,6 +39,7 @@ export async function register(input: RegisterInput, ctx: ClientContext): Promis
     email: input.email,
     passwordHash: await hashPassword(input.password),
   });
+  await ensureDefaultCategories(user._id.toString());
   const tokens = await createSession(user._id, ctx);
   return { user: toPublicUser(user), tokens };
 }

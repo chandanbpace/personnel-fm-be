@@ -31,6 +31,8 @@ const userSchema = new Schema(
       notifications: { type: notificationPreferencesSchema, default: () => ({}) },
     },
     isActive: { type: Boolean, default: true },
+    // Set once the default categories have been copied to this user.
+    defaultCategoriesSeededAt: { type: Date },
   },
   { timestamps: true },
 );
