@@ -9,6 +9,9 @@ export async function connectDatabase(uri: string): Promise<void> {
   mongoose.connection.on('error', (err) => logger.error({ err }, 'MongoDB connection error'));
 
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 10_000 });
+  // Wait for every model's indexes before serving traffic: unique indexes enforce rules such as
+  // one account name per user, and an index build running mid-transaction aborts the transaction.
+  await Promise.all(Object.values(mongoose.models).map((model) => model.init()));
   logger.info({ db: mongoose.connection.name }, 'MongoDB connected');
 }
 
