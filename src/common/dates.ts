@@ -37,6 +37,48 @@ export function addDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }
 
+/** Same day-of-month `months` later, in UTC. Callers only use days 1–28, so no month overflow. */
+function addMonths(date: Date, months: number): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, date.getUTCDate()));
+}
+
+/** Start of the financial month containing `date`, for months that begin on `startDay` (1–28). */
+export function financialMonthStart(date: Date, startDay: number): Date {
+  const y = date.getUTCFullYear();
+  const m = date.getUTCMonth();
+  return date.getUTCDate() >= startDay ? new Date(Date.UTC(y, m, startDay)) : new Date(Date.UTC(y, m - 1, startDay));
+}
+
+/** The financial month containing `today`, as inclusive calendar dates. */
+export function currentFinancialMonth(today: string, startDay: number): { from: string; to: string } {
+  const start = financialMonthStart(parseCalendarDate(today)!, startDay);
+  return { from: formatCalendarDate(start), to: formatCalendarDate(addDays(addMonths(start, 1), -1)) };
+}
+
+export interface DateBucket {
+  /** Inclusive start (UTC midnight). */
+  start: Date;
+  /** Exclusive end (UTC midnight of the day after the bucket's last day). */
+  end: Date;
+}
+
+/**
+ * Splits [from, to] (inclusive calendar dates) at financial-month boundaries. The first and last
+ * buckets are clipped to the range, so totals over the buckets always equal totals over the range.
+ */
+export function financialMonthBuckets(from: string, to: string, startDay: number): DateBucket[] {
+  const rangeStart = parseCalendarDate(from)!;
+  const rangeEnd = addDays(parseCalendarDate(to)!, 1);
+  const buckets: DateBucket[] = [];
+  let cursor = financialMonthStart(rangeStart, startDay);
+  while (cursor < rangeEnd) {
+    const next = addMonths(cursor, 1);
+    buckets.push({ start: cursor < rangeStart ? rangeStart : cursor, end: next > rangeEnd ? rangeEnd : next });
+    cursor = next;
+  }
+  return buckets;
+}
+
 export const calendarDateSchema = z
   .string()
   .refine((value) => parseCalendarDate(value) !== null, 'Use a valid date in YYYY-MM-DD format')

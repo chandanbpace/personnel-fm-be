@@ -141,7 +141,7 @@ const SORT_STAGES: Record<ListTransactionsQuery['sort'], Record<string, 1 | -1>>
 };
 
 /** Looks up the other leg of a transfer so the UI can show "to"/"from" accounts. */
-const COUNTERPART_LOOKUP: PipelineStage.Lookup = {
+export const COUNTERPART_LOOKUP: PipelineStage.Lookup = {
   $lookup: {
     from: TransactionModel.collection.name,
     let: { groupId: '$transferGroupId', selfId: '$_id' },
